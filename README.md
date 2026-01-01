@@ -1,11 +1,11 @@
-
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>$BURN ECOSYSTEM | Live Web3</title>
+    <title>$BURN ECOSYSTEM | Web3 Terminal</title>
     
-    <script src="https://unpkg.com/@thirdweb-dev/sdk@latest/dist/thirdweb-sdk.umd.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     
     <style>
         :root { 
@@ -33,13 +33,12 @@
         .nav-links { display: flex; gap: 25px; align-items: center; }
         .nav-links a { color: var(--subtext); text-decoration: none; font-size: 14px; font-weight: 600; }
 
-        /* REAL WALLET BUTTON STYLE */
+        /* WALLET BUTTON */
         #connect-btn {
             background-color: var(--gold); color: #000; border: none;
             padding: 12px 24px; border-radius: 20px; font-weight: 700;
             cursor: pointer; font-size: 14px; transition: 0.3s;
         }
-        #connect-btn:hover { background-color: #ffd65c; transform: scale(1.05); }
 
         /* MAIN UI */
         .container { display: flex; gap: 40px; width: 95%; max-width: 1200px; margin-top: 40px; justify-content: center; align-items: flex-start; }
@@ -115,36 +114,43 @@
     <script>
         let s = { bal: 1000.0, yld: 5.0, cst: 1000, active: false, last: Date.now() };
 
-        // --- REAL WALLET LOGIC ---
+        // --- IMPROVED WALLET CONNECTION ---
         async function connectWallet() {
             const btn = document.getElementById('connect-btn');
             
-            // Check if MetaMask or other wallet is installed
-            if (window.ethereum) {
+            // 1. Check if an injected provider exists (MetaMask, Coinbase, etc.)
+            if (typeof window.ethereum !== 'undefined') {
                 try {
-                    btn.innerText = "Connecting...";
-                    // Request account access
+                    btn.innerText = "Requesting...";
+                    
+                    // 2. Request the browser to open the wallet
                     const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                    const account = accounts[0];
                     
-                    // Show short version of address
-                    btn.innerText = account.substring(0, 6) + "..." + account.substring(account.length - 4);
-                    btn.style.backgroundColor = "var(--green)";
-                    btn.style.color = "#fff";
-                    
-                    console.log("Connected to:", account);
-                } catch (error) {
-                    console.error("User denied account access");
+                    if (accounts.length > 0) {
+                        const account = accounts[0];
+                        btn.innerText = account.substring(0, 6) + "..." + account.substring(account.length - 4);
+                        btn.style.backgroundColor = "var(--green)";
+                        btn.style.color = "#fff";
+                        console.log("Connected:", account);
+                    }
+                } catch (err) {
+                    console.error("Connection error:", err);
+                    if (err.code === 4001) {
+                        alert("Connection rejected by user.");
+                    } else {
+                        alert("Error: " + err.message);
+                    }
                     btn.innerText = "Connect Wallet";
                 }
             } else {
-                alert("No Web3 Wallet detected. Please install MetaMask or Phantom.");
+                // 3. Fallback if no wallet extension is found
+                alert("No crypto wallet detected. If you are on mobile, please use the MetaMask/Phantom browser.");
                 window.open('https://metamask.io/download/', '_blank');
             }
         }
 
         function init() {
-            const data = localStorage.getItem('burn_live_v5_2');
+            const data = localStorage.getItem('burn_live_v5_3');
             if (data) {
                 const p = JSON.parse(data);
                 const diff = (Date.now() - p.last) / 1000;
@@ -158,7 +164,7 @@
                     document.getElementById('bal').innerText = s.bal.toLocaleString(undefined, {minimumFractionDigits: 4});
                 }
             }, 500);
-            setInterval(() => { s.last = Date.now(); localStorage.setItem('burn_live_v5_2', JSON.stringify(s)); }, 1000);
+            setInterval(() => { s.last = Date.now(); localStorage.setItem('burn_live_v5_3', JSON.stringify(s)); }, 1000);
         }
 
         function runAuth() {
